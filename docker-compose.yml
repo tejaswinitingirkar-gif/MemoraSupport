@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # Optional self-hosted Hindsight engine service
+  hindsight:
+    image: vectorize/hindsight:latest
+    container_name: memorasupport-hindsight
+    ports:
+      - "8888:8888"
+    environment:
+      - HINDSIGHT_LOG_LEVEL=info
+    volumes:
+      - hindsight_data:/var/lib/hindsight
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: memorasupport-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=sqlite:///./memorasupport.db
+      - HINDSIGHT_API_URL=http://hindsight:8888
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - hindsight
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: memorasupport-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  hindsight_data:
